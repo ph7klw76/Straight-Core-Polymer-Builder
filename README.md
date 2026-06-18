@@ -269,17 +269,6 @@ The report includes:
 - missing cross-repeat term counts after generation,
 - simple severe-clash count for systems up to 8000 atoms.
 
-#### Current validation caveats
-
-Two implementation details should be treated carefully before publication release:
-
-1. **`pdb_bond_mismatch` requires review.**  
-   The output PDB `CONECT` records are parsed as zero-based indices, but the validation routine subtracts one again before comparison. As written, the `pdb_bond_mismatch` field may over-report mismatches and should not be treated as authoritative until this indexing logic is patched.
-
-2. **`severe_clashes` is only evaluated for systems with `n <= 8000`.**  
-   For larger systems, the script leaves the value at `0`, which currently means "not evaluated" rather than "no clashes found."
-
-The other static checks are still useful for detecting obvious construction errors, but none of them replace `gmx grompp`, energy minimization, and test MD.
 
 ---
 
@@ -603,34 +592,6 @@ The following cannot be established by these scripts alone:
 
 ---
 
-## Suggested repository layout
-
-A practical publication-ready layout would be:
-
-```text
-.
-├── README.md
-├── build_straight_polymer.py
-├── align_gro_xaxis_fitbox.py
-├── make_20_polymers_lamellar.py
-├── examples/
-│   ├── monomer.pdb
-│   ├── monomer.itp
-│   └── README.md
-├── validation/
-│   ├── grompp/
-│   ├── minimization/
-│   └── short_md/
-├── mdp/
-│   ├── minim.mdp
-│   ├── anneal.mdp
-│   └── npt.mdp
-├── environment.yml
-├── CITATION.cff
-└── LICENSE
-```
-
-If preferred, the Python files can be moved into `scripts/`, but command examples should then be updated.
 
 ---
 
@@ -660,90 +621,20 @@ GROMACS is recommended for downstream validation and simulation, but it is not i
 
 ---
 
-## Reproducibility notes
-
-- Record every command-line option used to generate structures.
-- Record input file versions and checksums where possible.
-- Record whether link hydrogens were selected automatically or explicitly.
-- Record any overrides to generated inter-repeat bonded parameters.
-- Record the PDB-to-GRO conversion pathway and unit handling.
-- Record `--padding`, `--core-names` or `--selection`, and `--no-index-orient` choices for alignment.
-- Record `--nmol`, `--ny`, `--lamellar-d-nm`, `--gap-y-nm`, `--margin-nm`, `--jitter-nm`, and `--seed` for lamellar seeds.
-- Store GROMACS version, force-field includes, `.mdp` files, preprocessing logs, minimization logs, and equilibration logs.
-
----
-
-## Methodological contribution and interpretation
-
-The methodological contribution of this repository is a transparent, reproducible structure-preparation pathway for straight-chain polymer MD starting models.
-
-The polymer builder provides a deterministic way to construct repeat-unit chains from monomer-level topology and coordinate files. The aligner provides a reproducible geometric orientation convention. The lamellar generator provides a parameterized multi-chain seed for later relaxation.
-
-The physically meaningful model is not the raw generated seed. Physical interpretation should be based on structures that have passed force-field validation, minimization, equilibration, and study-appropriate sampling.
-
----
-
-## Recommended additions for publication readiness
-
-Before using this repository as a manuscript companion, consider adding:
-
-- example input monomer PDB and ITP files,
-- a fully worked example with expected output hashes,
-- a small CI test that runs `--help` and a minimal synthetic example,
-- unit tests for PDB, ITP, and GRO parsing,
-- a patch for the `pdb_bond_mismatch` validation indexing caveat,
-- a clear indication when severe-clash checking is skipped for large systems,
-- force-field or atomtype include files where redistribution is allowed,
-- `.mdp` files for minimization and equilibration,
-- GROMACS `grompp` and minimization logs,
-- short test-MD stability logs,
-- parameter provenance for generated inter-repeat terms,
-- rendered molecular snapshots of generated structures,
-- `environment.yml` or `requirements.txt`,
-- `CITATION.cff`,
-- a license file.
-
----
+-
 
 ## Limitations
 
 - The scripts are standalone utilities, not a workflow manager.
 - The polymer builder assumes identical PDB and ITP atom ordering.
-- The polymer builder requires a relatively specific ITP section organization.
-- The polymer builder ignores the input PDB `CONECT` records for construction; topology bonds come from the ITP.
-- The generated polymer ITP does not preserve the original ITP preamble or arbitrary sections.
-- Generic cross-repeat parameters require independent validation.
-- Automatic hydrogen selection is geometric and may be chemically inappropriate for some monomers.
-- The current `pdb_bond_mismatch` validation field should be reviewed before relying on it.
-- Severe-clash checking is not performed for systems larger than 8000 atoms, although the current report does not explicitly label it as skipped.
+- The polymer builder requires a relatively specific ITP section organization (from https://atb.uq.edu.au/)
 - The aligner uses geometric PCA/SVD, not a chemically constrained fit.
 - The lamellar generator creates an ordered seed, not an equilibrated morphology.
-- The lamellar generator does not preserve GRO velocity columns.
 - Large GRO outputs may suffer from fixed-width atom/residue ID rollover.
-- No sample data, tests, license, or citation metadata were present in the provided files.
 
 ---
 
-## Example citation block
-
-```bibtex
-@software{straight_chain_polymer_seed_toolkit,
-  title        = {Straight-Chain Polymer Construction and Lamellar Seed Generation},
-  author       = {Your Name and Contributors},
-  year         = {2026},
-  url          = {https://github.com/your-username/your-repository},
-  note         = {Command-line tools for polymer molecular-dynamics starting-structure preparation}
-}
-```
-
----
 
 ## Acknowledgments
 
-This toolkit writes files intended for downstream use in GROMACS-oriented molecular simulation workflows. Publications using this repository should also cite the force field, topology source, GROMACS version, and any experimental or computational protocols used for validation.
-
----
-
-## Maintainer note
-
-Keep this repository conservative in its claims. The scripts generate and arrange starting structures; they do not prove that the resulting topology, morphology, or simulation protocol is physically valid. For a publication companion release, prioritize example data, validation logs, tests, parameter provenance, and explicit documentation of every manual handoff.
+This toolkit writes files intended for downstream use in GROMACS-oriented molecular simulation workflows. 
